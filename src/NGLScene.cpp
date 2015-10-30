@@ -114,7 +114,7 @@ void NGLScene::createMorphMesh()
     }
   }
   // first we grab an instance of our VOA class as a TRIANGLE_STRIP
-  m_vaoMesh= ngl::VertexArrayObject::createVOA(GL_TRIANGLES);
+  m_vaoMesh.reset(ngl::VertexArrayObject::createVOA(GL_TRIANGLES));
   // next we bind it so it's active for setting data
   m_vaoMesh->bind();
   unsigned int meshSize=vboMesh.size();
@@ -148,15 +148,15 @@ void NGLScene::changeWeight(Weights _w,Direction _d )
 
   switch(_w)
    {
-    case POSE1 :
-      if(_d == UP)
+    case Weights::POSE1 :
+      if(_d == Direction::UP)
         m_weight1+=0.1;
       else
         m_weight1-=0.1;
     break;
 
-    case POSE2 :
-      if(_d == UP)
+    case Weights::POSE2 :
+      if(_d == Direction::UP)
         m_weight2+=0.1;
       else
         m_weight2-=0.1;
@@ -170,20 +170,15 @@ void NGLScene::changeWeight(Weights _w,Direction _d )
 NGLScene::~NGLScene()
 {
   std::cout<<"Shutting down NGL, removing VAO's and Shaders\n";
-  for(unsigned int i=0; i<m_meshes.size(); ++i)
-  {
-    delete m_meshes[i];
-  }
 
 }
 
-void NGLScene::resizeGL(int _w, int _h)
+void NGLScene::resizeGL(QResizeEvent *_event)
 {
-
-  glViewport(0,0,_w,_h);
+  m_width=_event->size().width()*devicePixelRatio();
+  m_height=_event->size().height()*devicePixelRatio();
   // now set the camera size values as the screen size has changed
-  m_cam->setShape(45,(float)_w/_h,0.05,350);
-  update();
+  m_cam.setShape(45.0f,(float)width()/height(),0.05f,350.0f);
 }
 
 
@@ -207,20 +202,20 @@ void NGLScene::initializeGL()
 
 
   // first we create a mesh from an obj passing in the obj file and texture
-  ngl::Obj *mesh1= new ngl::Obj("models/BrucePose1.obj");
-  m_meshes.push_back(mesh1);
+  std::unique_ptr<ngl::Obj> mesh1(new ngl::Obj("models/BrucePose1.obj"));
+  m_meshes.push_back(std::move(mesh1));
 
-  ngl::Obj *mesh2= new ngl::Obj("models/BrucePose2.obj");
-  m_meshes.push_back(mesh2);
+  std::unique_ptr<ngl::Obj> mesh2( new ngl::Obj("models/BrucePose2.obj"));
+  m_meshes.push_back(std::move(mesh2));
 
-  ngl::Obj *mesh3= new ngl::Obj("models/BrucePose3.obj");
-  m_meshes.push_back(mesh3);
+  std::unique_ptr<ngl::Obj> mesh3( new ngl::Obj("models/BrucePose3.obj"));
+  m_meshes.push_back(std::move(mesh3));
   createMorphMesh();
 
-  m_cam= new ngl::Camera(from,to,up);
+  m_cam.set(from,to,up);
   // set the shape using FOV 45 Aspect Ratio based on Width and Height
   // The final two are near and far clipping planes of 0.5 and 10
-  m_cam->setShape(45,(float)720.0/576.0,0.05,350);
+  m_cam.setShape(45,(float)720.0/576.0,0.05,350);
   // now to load the shader and set the values
   // grab an instance of shader manager
   ngl::ShaderLib *shader=ngl::ShaderLib::instance();
@@ -283,7 +278,7 @@ void NGLScene::initializeGL()
 
   // as re-size is not explicitly called we need to do this.
   glViewport(0,0,width(),height());
-  m_text=new ngl::Text(QFont("Arial",16));
+  m_text.reset(new ngl::Text(QFont("Arial",16)));
   m_text->setScreenSize(width(),height());
 }
 
@@ -295,8 +290,8 @@ void NGLScene::loadMatricesToShader()
   ngl::Mat4 MV;
   ngl::Mat4 MVP;
   ngl::Mat3 normalMatrix;
-  MV= m_mouseGlobalTX*m_cam->getViewMatrix();
-  MVP=MV*m_cam->getProjectionMatrix() ;
+  MV= m_mouseGlobalTX*m_cam.getViewMatrix();
+  MVP=MV*m_cam.getProjectionMatrix() ;
   normalMatrix=MV;
   normalMatrix.inverse();
   shader->setUniform("MVP",MVP);
@@ -437,11 +432,11 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_F : showFullScreen(); break;
   // show windowed
   case Qt::Key_N : showNormal(); break;
-  case Qt::Key_Q : changeWeight(POSE1,DOWN); break;
-  case Qt::Key_W : changeWeight(POSE1,UP); break;
+  case Qt::Key_Q : changeWeight(Weights::POSE1,Direction::DOWN); break;
+  case Qt::Key_W : changeWeight(Weights::POSE1,Direction::UP); break;
 
-  case Qt::Key_A : changeWeight(POSE2,DOWN); break;
-  case Qt::Key_S : changeWeight(POSE2,UP); break;
+  case Qt::Key_A : changeWeight(Weights::POSE2,Direction::DOWN); break;
+  case Qt::Key_S : changeWeight(Weights::POSE2,Direction::UP); break;
   case Qt::Key_Space : toggleAnimation(); break;
   case Qt::Key_Z : punchLeft(); break;
   case Qt::Key_X : punchRight(); break;
@@ -456,14 +451,14 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
 
 void NGLScene::updateLeft()
 {
-  static Direction left=UP;
-  if(left == UP )
+  static Direction left=Direction::UP;
+  if(left == Direction::UP )
   {
     m_weight1+=0.2;
     if(m_weight1 >1.1)
-      left=DOWN;
+      left=Direction::DOWN;
   }
-  else if(left == DOWN )
+  else if(left == Direction::DOWN )
   {
    m_weight1-=0.2;
    if(m_weight1<=0.0)
@@ -471,7 +466,7 @@ void NGLScene::updateLeft()
      m_weight1=0.0;
 
      m_timerLeft->stop();
-     left=UP;
+     left=Direction::UP;
      m_punchLeft=false;
    }
   }
@@ -480,21 +475,21 @@ void NGLScene::updateLeft()
 
 void NGLScene::updateRight()
 {
-  static Direction right=UP;
-  if(right == UP )
+  static Direction right=Direction::UP;
+  if(right == Direction::UP )
   {
     m_weight2+=0.2;
     if(m_weight2 >1.1)
-      right=DOWN;
+      right=Direction::DOWN;
   }
-  else if(right == DOWN )
+  else if(right == Direction::DOWN )
   {
    m_weight2-=0.2f;
    if(m_weight2<=0.0)
    {
      m_weight2=0.0;
      m_timerRight->stop();
-     right=UP;
+     right=Direction::UP;
      m_punchRight=false;
    }
   }
