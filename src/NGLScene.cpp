@@ -122,10 +122,6 @@ void NGLScene::createMorphMesh()
   m_vaoMesh->setVertexAttributePointer(4,3,GL_FLOAT,sizeof(vertData),12);
   m_vaoMesh->setVertexAttributePointer(5,3,GL_FLOAT,sizeof(vertData),15);
 
-
-  // now we have set the vertex attributes we tell the VAO class how many indices to draw when
-  // glDrawArrays is called, in this case we use buffSize (but if we wished less of the sphere to be drawn we could
-  // specify less (in steps of 3))
   m_vaoMesh->setNumIndices(meshSize);
   // finally we have finished for now so time to unbind the VAO
   m_vaoMesh->unbind();
@@ -237,12 +233,12 @@ void NGLScene::initializeGL()
         // Specular shininess factor
         float shininess;
   };*/
-  shader->setShaderParam3f("material.Ka",0.1,0.1,0.1);
+  shader->setUniform("material.Ka",0.1f,0.1f,0.1f);
   // red diffuse
-  shader->setShaderParam3f("material.Kd",0.8,0.8,0.8);
+  shader->setUniform("material.Kd",0.8f,0.8f,0.8f);
   // white spec
-  shader->setShaderParam3f("material.Ks",1.0,1.0,1.0);
-  shader->setShaderParam1f("material.shininess",1000);
+  shader->setUniform("material.Ks",1.0f,1.0f,1.0f);
+  shader->setUniform("material.shininess",1000.0f);
   // now for  the lights values (all set to white)
   /*struct LightInfo
   {
@@ -256,9 +252,9 @@ void NGLScene::initializeGL()
   vec3 Ls;
   };*/
   shader->setUniform("light.position",ngl::Vec3(2,20,2));
-  shader->setShaderParam3f("light.La",0.1,0.1,0.1);
-  shader->setShaderParam3f("light.Ld",1.0,1.0,1.0);
-  shader->setShaderParam3f("light.Ls",0.9,0.9,0.9);
+  shader->setUniform("light.La",0.1f,0.1f,0.1f);
+  shader->setUniform("light.Ld",1.0f,1.0f,1.0f);
+  shader->setUniform("light.Ls",0.9f,0.9f,0.9f);
 
   glEnable(GL_DEPTH_TEST); // for removal of hidden surfaces
 
@@ -356,16 +352,16 @@ void NGLScene::updateLeft()
   static Direction left=Direction::UP;
   if(left == Direction::UP )
   {
-    m_weight1+=0.2;
-    if(m_weight1 >1.1)
+    m_weight1+=0.2f;
+    if(m_weight1 >1.1f)
       left=Direction::DOWN;
   }
   else if(left == Direction::DOWN )
   {
-   m_weight1-=0.2;
-   if(m_weight1<=0.0)
+   m_weight1-=0.2f;
+   if(m_weight1<=0.0f)
    {
-     m_weight1=0.0;
+     m_weight1=0.0f;
 
      m_timerLeft->stop();
      left=Direction::UP;
@@ -380,16 +376,16 @@ void NGLScene::updateRight()
   static Direction right=Direction::UP;
   if(right == Direction::UP )
   {
-    m_weight2+=0.2;
-    if(m_weight2 >1.1)
+    m_weight2+=0.2f;
+    if(m_weight2 >1.1f)
       right=Direction::DOWN;
   }
   else if(right == Direction::DOWN )
   {
    m_weight2-=0.2f;
-   if(m_weight2<=0.0)
+   if(m_weight2<=0.0f)
    {
-     m_weight2=0.0;
+     m_weight2=0.0f;
      m_timerRight->stop();
      right=Direction::UP;
      m_punchRight=false;
