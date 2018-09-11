@@ -1,12 +1,12 @@
 #ifndef NGLSCENE_H_
 #define NGLSCENE_H_
-#include <ngl/AbstractVAO.h>
-#include <ngl/Camera.h>
-#include <ngl/Obj.h>
-#include <ngl/Text.h>
-#include "WindowParams.h"
 #include <QTimer>
 #include <QOpenGLWindow>
+#include <ngl/AbstractVAO.h>
+#include <ngl/Obj.h>
+#include <ngl/Text.h>
+#include <ngl/Mat4.h>
+#include "WindowParams.h"
 #include <memory>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -64,7 +64,8 @@ private:
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief Our Camera
     //----------------------------------------------------------------------------------------------------------------------
-    ngl::Camera m_cam;
+    ngl::Mat4 m_view;
+    ngl::Mat4 m_project;
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief the model position for mouse movement
     //----------------------------------------------------------------------------------------------------------------------
