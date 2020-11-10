@@ -165,7 +165,7 @@ void NGLScene::initializeGL()
 {
   // we must call this first before any other GL commands to load and link the
   // gl commands from the lib, if this is not done program will crash
-  ngl::NGLInit::instance();
+  ngl::NGLInit::initialize();
 
   glClearColor(0.4f, 0.4f, 0.4f, 1.0f);			   // Grey Background
   // enable depth testing for drawing
@@ -195,28 +195,25 @@ void NGLScene::initializeGL()
   // set the shape using FOV 45 Aspect Ratio based on Width and Height
   // The final two are near and far clipping planes of 0.5 and 10
   m_project=ngl::perspective(45,720.0f/576.0f,0.05f,350);
-  // now to load the shader and set the values
-  // grab an instance of shader manager
-  ngl::ShaderLib *shader=ngl::ShaderLib::instance();
   // we are creating a shader called PerFragADS
-  shader->createShaderProgram("PerFragADS");
+  ngl::ShaderLib::createShaderProgram("PerFragADS");
   // now we are going to create empty shaders for Frag and Vert
-  shader->attachShader("PerFragADSVertex",ngl::ShaderType::VERTEX);
-  shader->attachShader("PerFragADSFragment",ngl::ShaderType::FRAGMENT);
+  ngl::ShaderLib::attachShader("PerFragADSVertex",ngl::ShaderType::VERTEX);
+  ngl::ShaderLib::attachShader("PerFragADSFragment",ngl::ShaderType::FRAGMENT);
   // attach the source
-  shader->loadShaderSource("PerFragADSVertex","shaders/PerFragASDVert.glsl");
-  shader->loadShaderSource("PerFragADSFragment","shaders/PerFragASDFrag.glsl");
+  ngl::ShaderLib::loadShaderSource("PerFragADSVertex","shaders/PerFragASDVert.glsl");
+  ngl::ShaderLib::loadShaderSource("PerFragADSFragment","shaders/PerFragASDFrag.glsl");
   // compile the shaders
-  shader->compileShader("PerFragADSVertex");
-  shader->compileShader("PerFragADSFragment");
+  ngl::ShaderLib::compileShader("PerFragADSVertex");
+  ngl::ShaderLib::compileShader("PerFragADSFragment");
   // add them to the program
-  shader->attachShaderToProgram("PerFragADS","PerFragADSVertex");
-  shader->attachShaderToProgram("PerFragADS","PerFragADSFragment");
+  ngl::ShaderLib::attachShaderToProgram("PerFragADS","PerFragADSVertex");
+  ngl::ShaderLib::attachShaderToProgram("PerFragADS","PerFragADSFragment");
 
   // now we have associated this data we can link the shader
-  shader->linkProgramObject("PerFragADS");
+  ngl::ShaderLib::linkProgramObject("PerFragADS");
   // and make it active ready to load values
-  (*shader)["PerFragADS"]->use();
+  ngl::ShaderLib::use("PerFragADS");
   // now we need to set the material and light values
   /*
    *struct MaterialInfo
@@ -230,12 +227,12 @@ void NGLScene::initializeGL()
         // Specular shininess factor
         float shininess;
   };*/
-  shader->setUniform("material.Ka",0.1f,0.1f,0.1f);
+  ngl::ShaderLib::setUniform("material.Ka",0.1f,0.1f,0.1f);
   // red diffuse
-  shader->setUniform("material.Kd",0.8f,0.8f,0.8f);
+  ngl::ShaderLib::setUniform("material.Kd",0.8f,0.8f,0.8f);
   // white spec
-  shader->setUniform("material.Ks",1.0f,1.0f,1.0f);
-  shader->setUniform("material.shininess",1000.0f);
+  ngl::ShaderLib::setUniform("material.Ks",1.0f,1.0f,1.0f);
+  ngl::ShaderLib::setUniform("material.shininess",1000.0f);
   // now for  the lights values (all set to white)
   /*struct LightInfo
   {
@@ -248,24 +245,23 @@ void NGLScene::initializeGL()
   // Specular light intensity
   vec3 Ls;
   };*/
-  shader->setUniform("light.position",ngl::Vec3(2,20,2));
-  shader->setUniform("light.La",0.1f,0.1f,0.1f);
-  shader->setUniform("light.Ld",1.0f,1.0f,1.0f);
-  shader->setUniform("light.Ls",0.9f,0.9f,0.9f);
+  ngl::ShaderLib::setUniform("light.position",ngl::Vec3(2,20,2));
+  ngl::ShaderLib::setUniform("light.La",0.1f,0.1f,0.1f);
+  ngl::ShaderLib::setUniform("light.Ld",1.0f,1.0f,1.0f);
+  ngl::ShaderLib::setUniform("light.Ls",0.9f,0.9f,0.9f);
 
   glEnable(GL_DEPTH_TEST); // for removal of hidden surfaces
 
   // as re-size is not explicitly called we need to do this.
   glViewport(0,0,width(),height());
-  m_text.reset(new ngl::Text(QFont("Arial",16)));
+  m_text=std::make_unique<ngl::Text>("fonts/Arial.ttf",16);
   m_text->setScreenSize(width(),height());
 }
 
 
 void NGLScene::loadMatricesToShader()
 {
-  ngl::ShaderLib *shader=ngl::ShaderLib::instance();
-  (*shader)["PerFragADS"]->use();
+  ngl::ShaderLib::use("PerFragADS");
   ngl::Mat4 MV;
   ngl::Mat4 MVP;
   ngl::Mat3 normalMatrix;
@@ -273,11 +269,11 @@ void NGLScene::loadMatricesToShader()
   MVP=m_project*MV ;
   normalMatrix=MV;
   normalMatrix.inverse().transpose();
-  shader->setUniform("MVP",MVP);
-  shader->setUniform("MV",MV);
-  shader->setUniform("normalMatrix",normalMatrix);
-  shader->setUniform("weight1",m_weight1);
-  shader->setUniform("weight2",m_weight2);
+  ngl::ShaderLib::setUniform("MVP",MVP);
+  ngl::ShaderLib::setUniform("MV",MV);
+  ngl::ShaderLib::setUniform("normalMatrix",normalMatrix);
+  ngl::ShaderLib::setUniform("weight1",m_weight1);
+  ngl::ShaderLib::setUniform("weight2",m_weight2);
 }
 
 void NGLScene::paintGL()
@@ -304,12 +300,9 @@ void NGLScene::paintGL()
   m_vaoMesh->draw();
   m_vaoMesh->unbind();
   m_text->setColour(1.0f,1.0f,1.0f);
-  QString text=QString("Q-W change Pose one weight %1").arg(m_weight1);
 
-  m_text->renderText(10,18,text);
-  text=QString("A-S change Pose two weight %1").arg(m_weight2);
-  m_text->renderText(10,34,text);
-  m_text->renderText(10,58,"Z trigger Left Punch X trigger Right");
+  m_text->renderText(10,700,fmt::format("Q-W change Pose one weight {:0.2f}",m_weight1));
+  m_text->renderText(10,680,fmt::format("A-S change Pose one weight {:0.2f}",m_weight2));
 
 }
 
