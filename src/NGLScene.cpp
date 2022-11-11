@@ -8,7 +8,7 @@
 #include <ngl/VAOFactory.h>
 #include <ngl/ShaderLib.h>
 #include <ngl/Transformation.h>
-
+#include <iostream>
 NGLScene::NGLScene()
 {
   setTitle("Morph Mesh Demo");
